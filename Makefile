@@ -3,7 +3,7 @@ install:
 
 
 lint:
-	ruff check
+	uv run ruff check --fix page_analyzer
 
 dev:
 	uv run flask --debug --app page_analyzer:app run
