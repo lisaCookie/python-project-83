@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Анализатор страниц</title>
+  <link rel="canonical" href="https://getbootstrap.com/docs/5.3/examples/starter-template/" />
+  <!-- Подключение Bootstrap CSS через CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" 
+        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous" />
+
+  <style>
+    .footer-centered {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 1030;
+    }
+
+    .navbar-top {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1050;
+    }
+
+    body {
+      padding-top: 70px;
+      padding-bottom: 50px;
+    }
+
+    .body-wrapper {
+      background-color: #d0e0f0; 
+      padding: 20px; 
+      min-height: calc(40vh - 70px - 50px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Навигационная панель -->
+  <nav class="navbar navbar-expand-md navbar-dark bg-dark px-3 navbar-top">
+    <a class="navbar-brand" href="/">Анализатор страниц</a>
+    <div id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="/urls">Сайты</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Обертка для содержимого с фоном и отступами -->
+  <div class="body-wrapper">
+    <div class="container">
+      <main>
+        <h1 class="text-body-emphasis">Анализатор страниц</h1>
+        <p class="fs-5 col-md-8">Бесплатно проверяйте сайты на SEO-пригодность</p>
+        <form action="/urls" method="post" class="d-flex justify-content-center mt-3">
+          <label for="text" class="visually-hidden">Url для проверки</label>
+          <input type="text" id="text" name="url" placeholder="https://www.example.com" class="form-control form-control-lg" required>
+          <input type="submit" class="btn btn-primary btn-lg ms-3 px-5 text-uppercase" value="Проверить" />
+        </form>
+      </main>
+    </div>
+  </div>
+
+  <!-- Футер -->
+  <div class="footer-centered text-body-secondary border-top">
+    Created by DINO &middot; &copy; 2025
+  </div>
+
+  <!-- Скрипт Bootstrap Bundle (с Popper.js) через CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" 
+          integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
+</body>
+</html>
