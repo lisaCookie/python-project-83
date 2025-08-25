@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY pyproject.toml .
 
+RUN touch README.md
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir .

@@ -26,14 +26,13 @@ def index():
         url_input = request.form.get('url')
         # Валидация URL
         if not url_input:
-            flash('Пожалуйста, введите URL', 'error')
-            return render_template('index.html')
+            return render_template('index.html', 
+                                   error='Пожалуйста, введите URL')
         if len(url_input) > 255:
-            flash('URL не должен превышать 255 символов', 'error')
-            return render_template('index.html')
+            return render_template('index.html', 
+                                   error='URL не должен превышать 255 символов')
         if not validators.url(url_input):
-            flash('Некорректный URL', 'error')
-            return render_template('index.html')
+            return render_template('index.html', error='Некорректный URL')
 
         # Проверка, что сайт с таким именем еще не добавлен
         conn = get_db_connection()
@@ -55,10 +54,10 @@ def index():
                 new_id = cursor.fetchone()[0]
         flash('URL успешно добавлен', 'success')
         return redirect(url_for('url_detail', id=new_id))
-    return render_template('index.html')
+    return render_template('index.html', error=request.args.get('error'))
 
 
-@app.route('/urls', endpoint='urls')
+@app.route('/urls', methods=['GET', 'POST'], endpoint='urls')
 def all_urls():
     conn = get_db_connection()
     with conn:
@@ -88,4 +87,3 @@ def url_detail(id):
     else:
         flash('URL не найден', 'warning')
         return redirect(url_for('urls'))
-

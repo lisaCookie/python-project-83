@@ -11,12 +11,13 @@
         <thead>
             <tr>
                 <th>ID</th>
-                <th>URL</th>
-                <th>Дата добавления</th>
+                <th>Имя</th>
+                <th>Последняя проверка</th>
+                <th>Код ответа</th>
             </tr>
         </thead>
         <tbody>
-            {% for id, name, created_at in urls %}
+            {% for id, name, created_at, response_code in urls %}
             <tr>
                 <td>{{ id }}</td>
                 <td><a href="{{ url_for('url_detail', id=id) }}">{{ name }}</a></td>
