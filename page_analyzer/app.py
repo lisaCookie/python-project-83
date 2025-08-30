@@ -63,9 +63,20 @@ def all_urls():
     with conn:
         with conn.cursor() as cursor:
             cursor.execute(
-                "SELECT id, name, created_at FROM urls "
-                "ORDER BY created_at DESC"
-            )
+                """
+                SELECT u.id, u.name, u.created_at, 
+                    uc.created_at AS last_check_date, 
+                    uc.status_code
+                FROM urls u
+                LEFT JOIN LATERAL (
+                    SELECT created_at, status_code
+                    FROM url_checks
+                    WHERE url_id = u.id
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                ) uc ON true
+                ORDER BY u.created_at DESC
+                """)
 
             urls = cursor.fetchall()
     return render_template('urls.html', urls=urls)
@@ -82,8 +93,41 @@ def url_detail(id):
             )
 
             url_record = cursor.fetchone()
+            cursor.execute(
+                "SELECT id, created_at " 
+                "FROM url_checks " 
+                "WHERE url_id = %s " 
+                "ORDER BY created_at DESC",
+                (id,)
+            )
+            checks = cursor.fetchall()
     if url_record:
-        return render_template('url_detail.html', url=url_record)
+        return render_template(
+            'url.html',
+            url=url_record[1],
+            created_at=url_record[2],
+            url_id=url_record[0],
+            checks=checks
+        )
     else:
         flash('URL не найден', 'warning')
         return redirect(url_for('urls'))
+
+
+@app.route('/urls/<int:id>/checks', methods=['POST'])
+def url_checks(id):
+    conn = get_db_connection()
+    with conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT id FROM urls WHERE id = %s", (id,))
+            url_exists = cursor.fetchone()
+            if not url_exists:
+                flash('URL not found', 'warning')
+                return redirect(url_for('urls'))
+            cursor.execute(
+                "INSERT INTO url_checks (url_id) VALUES (%s)",
+                (id,)
+            )
+    flash('Проверка успешно добавлена', 'success')
+    return redirect(url_for('url_detail', id=id))
+

@@ -17,6 +17,22 @@
             <td>{{ created_at }}</td>
         </tr>
     </table>
+    <h2>Проверки</h2>
+    {% if checks %}
+        <ul>
+        {% for check in checks %}
+            <li>ID: {{ check[0] }}, дата: {{ check[1] }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Проверок пока нет</p>
+    {% endif %}
+
+
+    <form action="{{ url_for('url_checks', id=url_id) }}" method="post">
+        <button type="submit" class="btn btn-primary mb-3">Запустить проверку</button>
+    </form>
+
     <a href="{{ url_for('home') }}" class="btn btn-primary">На главную</a>
     <a href="{{ url_for('urls') }}" class="btn btn-secondary" data-test="urls">Все URL</a>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

@@ -17,11 +17,25 @@
             </tr>
         </thead>
         <tbody>
-            {% for id, name, created_at, response_code in urls %}
+            {% for id, name, created_at, last_check_date, response_code in urls %}
             <tr>
                 <td>{{ id }}</td>
                 <td><a href="{{ url_for('url_detail', id=id) }}">{{ name }}</a></td>
                 <td>{{ created_at }}</td>
+                <td>
+                    {% if last_check_date %}
+                        {{ last_check_date }}
+                    {% else %}
+                        Проверок нет
+                    {% endif %}
+                </td>
+                <td>
+                    {% if response_code %}
+                        {{ response_code }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -30,3 +44,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
