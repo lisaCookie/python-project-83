@@ -10,26 +10,45 @@
     <table class="table table-bordered" data-test="url">
         <tr>
             <th>URL</th>
-            <td>{{ url }}</td>
+            <td>{{ url.name }}</td>
         </tr>
         <tr>
             <th>Дата добавления</th>
-            <td>{{ created_at }}</td>
+            <td>{{ url.created_at }}</td>
         </tr>
     </table>
     <h2>Проверки</h2>
     {% if checks %}
-        <ul>
-        {% for check in checks %}
-            <li>ID: {{ check[0] }}, дата: {{ check[1] }}, {{ check[2] or 'Ошибка' }}</li>
-        {% endfor %}
-        </ul>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Дата проверки</th>
+                    <th>Код ответа</th>
+                    <th>H1</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for check in checks %}
+                <tr>
+                    <td>{{ check.id }}</td>
+                    <td>{{ check.created_at }}</td>
+                    <td>{{ check.status_code or 'Ошибка' }}</td>
+                    <td>{{ check.h1 or 'Не найден' }}</td>
+                    <td>{{ check.title or 'Не найден' }}</td>
+                    <td>{{ check.description or 'Не найден' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
         <p>Проверок пока нет</p>
     {% endif %}
 
 
-    <form action="{{ url_for('url_checks', id=url_id) }}" method="post">
+    <form action="{{ url_for('url_checks', id=url.id) }}" method="post">
         <button type="submit" class="btn btn-primary mb-3">Запустить проверку</button>
     </form>
 

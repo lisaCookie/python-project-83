@@ -4,8 +4,10 @@ import os
 import psycopg2
 import requests
 import validators
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, url_for
+from psycopg2.extras import RealDictCursor
 
 load_dotenv()
 
@@ -67,10 +69,10 @@ def all_urls():
                 """
                 SELECT u.id, u.name, u.created_at, 
                     uc.created_at AS last_check_date, 
-                    uc.status_code
+                    uc.status_code, uc.h1, uc.title, uc.description
                 FROM urls u
                 LEFT JOIN LATERAL (
-                    SELECT created_at, status_code
+                    SELECT created_at, status_code, h1, title, description 
                     FROM url_checks
                     WHERE url_id = u.id
                     ORDER BY created_at DESC
@@ -87,7 +89,7 @@ def all_urls():
 def url_detail(id):
     conn = get_db_connection()
     with conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 "SELECT id, name, created_at FROM urls WHERE id = %s", 
                 (id,)
@@ -95,7 +97,7 @@ def url_detail(id):
 
             url_record = cursor.fetchone()
             cursor.execute(
-                "SELECT id, created_at, status_code" 
+                "SELECT id, created_at, status_code, h1, title, description " 
                 "FROM url_checks " 
                 "WHERE url_id = %s " 
                 "ORDER BY created_at DESC",
@@ -105,9 +107,7 @@ def url_detail(id):
     if url_record:
         return render_template(
             'url.html',
-            url=url_record[1],
-            created_at=url_record[2],
-            url_id=url_record[0],
+            url=url_record,
             checks=checks
         )
     else:
@@ -132,10 +132,32 @@ def url_checks(id):
                 status_code = response.status_code
                 
                 if status_code < 400:
+                    # Парсинг HTML с BeautifulSoup
+                    soup = BeautifulSoup(response.text, 'html.parser') 
+                    
+                    # Извлечь h1
+                    h1_tag = soup.find('h1')
+                    h1_content = h1_tag.get_text(strip=True) if h1_tag else None
+                    
+                    # Извлечь title
+                    title_tag = soup.find('title')
+                    title_content = (title_tag.get_text(strip=True) 
+                                     if title_tag else None)
+                    
+                    # Извлечь meta name="description"
+                    meta_desc = soup.find('meta', attrs={'name': 'description'})
+                    desc_content = (meta_desc.get('content', None) 
+                                    if meta_desc else None)
+                    
+                    # Вставить данные в базу 
                     cursor.execute(
-                        "INSERT INTO url_checks (url_id, status_code) " 
-                        "VALUES (%s, %s)",
-                        (id, status_code)
+                        """
+                        INSERT INTO url_checks (url_id, status_code, 
+                                                h1, title, description)
+                        VALUES (%s, %s, %s, %s, %s)
+                        """,
+                        (id, status_code, h1_content, 
+                         title_content, desc_content)
                     )
                     flash('Проверка успешно добавлена', 'success')
                 else:

@@ -17,27 +17,17 @@
             </tr>
         </thead>
         <tbody>
-            {% for id, name, created_at, last_check_date, response_code in urls %}
-            <tr>
-                <td>{{ id }}</td>
-                <td><a href="{{ url_for('url_detail', id=id) }}">{{ name }}</a></td>
-                <td>{{ created_at }}</td>
-                <td>
-                    {% if last_check_date %}
-                        {{ last_check_date }}
-                    {% else %}
-                        Проверок нет
-                    {% endif %}
-                </td>
-                <td>
-                    {% if response_code %}
-                        {{ response_code }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
+        {% for id, name, created_at, last_check_date, status_code, h1, title, description in urls %}
+        <tr>
+            <td>{{ id }}</td>
+            <td><a href="{{ url_for('url_detail', id=id) }}">{{ name }}</a></td>
+            <td>{{ last_check_date or 'Проверок нет' }}</td>
+            <td>{{ status_code or '-' }}</td>
+            <td>{{ h1 or '-' }}</td>
+            <td>{{ title or '-' }}</td>
+            <td>{{ description or '-' }}</td>
+        </tr>
+        {% endfor %}
         </tbody>
     </table>
     <a href="{{ url_for('home') }}" class="btn btn-primary">На главную</a>
