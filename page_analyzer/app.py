@@ -2,10 +2,10 @@
 import os
 
 import psycopg2
+import requests
 import validators
 from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, url_for
-import requests
 
 load_dotenv()
 
@@ -133,13 +133,14 @@ def url_checks(id):
                 
                 if status_code < 400:
                     cursor.execute(
-                        "INSERT INTO url_checks (url_id, status_code) VALUES (%s, %s)",
+                        "INSERT INTO url_checks (url_id, status_code) " 
+                        "VALUES (%s, %s)",
                         (id, status_code)
                     )
                     flash('Проверка успешно добавлена', 'success')
                 else:
                     flash('Произошла ошибка при проверке', 'danger')
-            except requests.RequestException as e:
+            except requests.RequestException:
                 flash('Произошла ошибка при проверке', 'danger')
     
     return redirect(url_for('url_detail', id=id))
