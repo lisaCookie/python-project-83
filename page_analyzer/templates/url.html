@@ -21,7 +21,7 @@
     {% if checks %}
         <ul>
         {% for check in checks %}
-            <li>ID: {{ check[0] }}, дата: {{ check[1] }}</li>
+            <li>ID: {{ check[0] }}, дата: {{ check[1] }}, {{ check[2] or 'Ошибка' }}</li>
         {% endfor %}
         </ul>
     {% else %}

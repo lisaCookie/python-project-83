@@ -5,6 +5,7 @@ import psycopg2
 import validators
 from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, url_for
+import requests
 
 load_dotenv()
 
@@ -94,7 +95,7 @@ def url_detail(id):
 
             url_record = cursor.fetchone()
             cursor.execute(
-                "SELECT id, created_at " 
+                "SELECT id, created_at, status_code" 
                 "FROM url_checks " 
                 "WHERE url_id = %s " 
                 "ORDER BY created_at DESC",
@@ -120,14 +121,26 @@ def url_checks(id):
     with conn:
         with conn.cursor() as cursor:
             cursor.execute("SELECT id FROM urls WHERE id = %s", (id,))
-            url_exists = cursor.fetchone()
-            if not url_exists:
+            url_record = cursor.fetchone()
+            if not url_record:
                 flash('URL not found', 'warning')
                 return redirect(url_for('urls'))
-            cursor.execute(
-                "INSERT INTO url_checks (url_id) VALUES (%s)",
-                (id,)
-            )
-    flash('Проверка успешно добавлена', 'success')
+            url = url_record[0]
+            
+            try:
+                response = requests.get(url, timeout=10)
+                status_code = response.status_code
+                
+                if status_code < 400:
+                    cursor.execute(
+                        "INSERT INTO url_checks (url_id, status_code) VALUES (%s, %s)",
+                        (id, status_code)
+                    )
+                    flash('Проверка успешно добавлена', 'success')
+                else:
+                    flash('Произошла ошибка при проверке', 'danger')
+            except requests.RequestException as e:
+                flash('Произошла ошибка при проверке', 'danger')
+    
     return redirect(url_for('url_detail', id=id))
 
