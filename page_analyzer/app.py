@@ -67,12 +67,12 @@ def all_urls():
         with conn.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT u.id, u.name, u.created_at, 
+                SELECT u.id, u.name,
                     uc.created_at AS last_check_date, 
-                    uc.status_code, uc.h1, uc.title, uc.description
+                    uc.status_code
                 FROM urls u
                 LEFT JOIN LATERAL (
-                    SELECT created_at, status_code, h1, title, description 
+                    SELECT created_at, status_code
                     FROM url_checks
                     WHERE url_id = u.id
                     ORDER BY created_at DESC
@@ -120,7 +120,7 @@ def url_checks(id):
     conn = get_db_connection()
     with conn:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT id FROM urls WHERE id = %s", (id,))
+            cursor.execute("SELECT name FROM urls WHERE id = %s", (id,))
             url_record = cursor.fetchone()
             if not url_record:
                 flash('URL not found', 'warning')
