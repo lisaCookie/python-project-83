@@ -30,7 +30,7 @@ def index():
         # Валидация URL
         if not url_input:
             return render_template('index.html', 
-                                   error='Пожалуйста, введите URL')
+                                   error='Заполните это поле')
         if len(url_input) > 255:
             return render_template('index.html', 
                                    error='URL не должен превышать 255 символов')
@@ -47,7 +47,7 @@ def index():
                 )
                 existing = cursor.fetchone()
                 if existing:
-                    flash('Этот URL уже добавлен', 'info')
+                    flash('Страница уже существует', 'info')
                     return redirect(url_for('url_detail', id=existing[0]))
                 # Добавить новый URL
                 cursor.execute(
