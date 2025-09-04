@@ -55,7 +55,7 @@ def index():
                     (url_input,)
                 )
                 new_id = cursor.fetchone()[0]
-        flash('URL успешно добавлен', 'success')
+        flash('Страница успешно добавлена', 'success')
         return redirect(url_for('url_detail', id=new_id))
     return render_template('index.html', error=request.args.get('error'))
 
