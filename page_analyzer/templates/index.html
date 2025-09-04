@@ -26,6 +26,7 @@
       z-index: 1050;
     }
 
+
     body {
       padding-top: 70px;
       padding-bottom: 50px;
@@ -36,6 +37,7 @@
       padding: 20px; 
       min-height: calc(40vh - 70px - 50px);
     }
+
   </style>
 </head>
 <body>
@@ -49,6 +51,22 @@
       </ul>
     </div>
   </nav>
+
+  <!-- Flash-сообщения -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="position: fixed; top: 56px; left: 0; width: 100%; z-index: 1040;">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show m-0 rounded-0" role="alert">
+              <div class="container">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
 
   <!-- Обертка для содержимого с фоном и отступами -->
   <div class="body-wrapper">

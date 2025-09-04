@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, url_for
 from psycopg2.extras import RealDictCursor
+from urllib.parse import urlparse, urlunparse
 
 load_dotenv()
 
@@ -35,7 +36,11 @@ def index():
             return render_template('index.html', 
                                    error='URL не должен превышать 255 символов')
         if not validators.url(url_input):
+            flash('Некорректный URL', 'danger')
             return render_template('index.html', error='Некорректный URL')
+        
+        parsed = urlparse(url_input)
+        base_url = urlunparse((parsed.scheme, parsed.netloc, '', '', '', ''))
 
         # Проверка, что сайт с таким именем еще не добавлен
         conn = get_db_connection()
@@ -43,7 +48,7 @@ def index():
             with conn.cursor() as cursor:
                 cursor.execute(
                     "SELECT id FROM urls WHERE name = %s", 
-                    (url_input,)
+                    (base_url,)
                 )
                 existing = cursor.fetchone()
                 if existing:
@@ -52,7 +57,7 @@ def index():
                 # Добавить новый URL
                 cursor.execute(
                     "INSERT INTO urls (name) VALUES (%s) RETURNING id",
-                    (url_input,)
+                    (base_url,)
                 )
                 new_id = cursor.fetchone()[0]
         flash('Страница успешно добавлена', 'success')
