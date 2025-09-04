@@ -159,11 +159,10 @@ def url_checks(id):
                         (id, status_code, h1_content, 
                          title_content, desc_content)
                     )
-                    flash('Проверка успешно добавлена', 'success')
+                    flash('Страница успешно проверена', 'success')
                 else:
                     flash('Произошла ошибка при проверке', 'danger')
             except requests.RequestException:
                 flash('Произошла ошибка при проверке', 'danger')
     
     return redirect(url_for('url_detail', id=id))
-
