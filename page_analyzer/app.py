@@ -1,173 +1,84 @@
-
 import os
 
-import psycopg2
-import requests
-import validators
-from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, url_for
-from psycopg2.extras import RealDictCursor
-from urllib.parse import urlparse, urlunparse
+
+from .parser import parse_url
+from .utils import normalize_url, validate_url
+from .work_with_db import (
+    get_all_urls,
+    get_checks_by_url_id,
+    get_url_by_id,
+    insert_check,
+    insert_url,
+)
 
 load_dotenv()
-
-DATABASE_URL = os.getenv('DATABASE_URL')
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 app = Flask(__name__)
-app.secret_key = SECRET_KEY 
+app.secret_key = SECRET_KEY
 
 
-def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL)
-    return conn
-
-
-@app.route('/', methods=['GET', 'POST'], endpoint='home')
+@app.route('/', methods=['GET'], endpoint='home')
 def index():
-    if request.method == 'POST':
-        url_input = request.form.get('url')
-        # Валидация URL
-        if not url_input:
-            return render_template('index.html', 
-                                   error='Заполните это поле')
-        if len(url_input) > 255:
-            return render_template('index.html', 
-                                   error='URL не должен превышать 255 символов')
-        if not validators.url(url_input):
-            flash('Некорректный URL', 'danger')
-            return render_template('index.html', error='Некорректный URL')
-        
-        parsed = urlparse(url_input)
-        base_url = urlunparse((parsed.scheme, parsed.netloc, '', '', '', ''))
-
-        # Проверка, что сайт с таким именем еще не добавлен
-        conn = get_db_connection()
-        with conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    "SELECT id FROM urls WHERE name = %s", 
-                    (base_url,)
-                )
-                existing = cursor.fetchone()
-                if existing:
-                    flash('Страница уже существует', 'info')
-                    return redirect(url_for('url_detail', id=existing[0]))
-                # Добавить новый URL
-                cursor.execute(
-                    "INSERT INTO urls (name) VALUES (%s) RETURNING id",
-                    (base_url,)
-                )
-                new_id = cursor.fetchone()[0]
-        flash('Страница успешно добавлена', 'success')
-        return redirect(url_for('url_detail', id=new_id))
-    return render_template('index.html', error=request.args.get('error'))
+    return render_template('index.html')
 
 
 @app.route('/urls', methods=['GET', 'POST'], endpoint='urls')
 def all_urls():
-    conn = get_db_connection()
-    with conn:
-        with conn.cursor() as cursor:
-            cursor.execute(
-                """
-                SELECT u.id, u.name,
-                    uc.created_at AS last_check_date, 
-                    uc.status_code
-                FROM urls u
-                LEFT JOIN LATERAL (
-                    SELECT created_at, status_code
-                    FROM url_checks
-                    WHERE url_id = u.id
-                    ORDER BY created_at DESC
-                    LIMIT 1
-                ) uc ON true
-                ORDER BY u.created_at DESC
-                """)
-
-            urls = cursor.fetchall()
+    if request.method == 'POST':
+        url_input = request.form.get('url')
+        error = validate_url(url_input)
+        if error:
+            flash(error, 'danger')
+            return redirect(url_for('home'))
+        
+        base_url = normalize_url(url_input)
+        new_id, is_new = insert_url(base_url)
+        
+        if not is_new:
+            flash('Страница уже существует', 'info')
+        else:
+            flash('Страница успешно добавлена', 'success')
+        
+        return redirect(url_for('url_detail', id=new_id))
+    
+    urls = get_all_urls()
     return render_template('urls.html', urls=urls)
 
 
 @app.route('/urls/<int:id>')
 def url_detail(id):
-    conn = get_db_connection()
-    with conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(
-                "SELECT id, name, created_at FROM urls WHERE id = %s", 
-                (id,)
-            )
-
-            url_record = cursor.fetchone()
-            cursor.execute(
-                "SELECT id, created_at, status_code, h1, title, description " 
-                "FROM url_checks " 
-                "WHERE url_id = %s " 
-                "ORDER BY created_at DESC",
-                (id,)
-            )
-            checks = cursor.fetchall()
-    if url_record:
-        return render_template(
-            'url.html',
-            url=url_record,
-            checks=checks
-        )
-    else:
+    url_record = get_url_by_id(id)
+    if not url_record:
         flash('URL не найден', 'warning')
         return redirect(url_for('urls'))
+    
+    checks = get_checks_by_url_id(id)
+    return render_template('url.html', url=url_record, checks=checks)
 
 
 @app.route('/urls/<int:id>/checks', methods=['POST'])
 def url_checks(id):
-    conn = get_db_connection()
-    with conn:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT name FROM urls WHERE id = %s", (id,))
-            url_record = cursor.fetchone()
-            if not url_record:
-                flash('URL not found', 'warning')
-                return redirect(url_for('urls'))
-            url = url_record[0]
-            
-            try:
-                response = requests.get(url, timeout=10)
-                status_code = response.status_code
-                
-                if status_code < 400:
-                    # Парсинг HTML с BeautifulSoup
-                    soup = BeautifulSoup(response.text, 'html.parser') 
-                    
-                    # Извлечь h1
-                    h1_tag = soup.find('h1')
-                    h1_content = h1_tag.get_text(strip=True) if h1_tag else None
-                    
-                    # Извлечь title
-                    title_tag = soup.find('title')
-                    title_content = (title_tag.get_text(strip=True) 
-                                     if title_tag else None)
-                    
-                    # Извлечь meta name="description"
-                    meta_desc = soup.find('meta', attrs={'name': 'description'})
-                    desc_content = (meta_desc.get('content', None) 
-                                    if meta_desc else None)
-                    
-                    # Вставить данные в базу 
-                    cursor.execute(
-                        """
-                        INSERT INTO url_checks (url_id, status_code, 
-                                                h1, title, description)
-                        VALUES (%s, %s, %s, %s, %s)
-                        """,
-                        (id, status_code, h1_content, 
-                         title_content, desc_content)
-                    )
-                    flash('Страница успешно проверена', 'success')
-                else:
-                    flash('Произошла ошибка при проверке', 'danger')
-            except requests.RequestException:
-                flash('Произошла ошибка при проверке', 'danger')
+    url_record = get_url_by_id(id)
+    if not url_record:
+        flash('URL не найден', 'warning')
+        return redirect(url_for('urls'))
+    
+    url = url_record['name']
+    status_code, h1, title, description = parse_url(url)
+    
+    if status_code is None:
+        flash('Произошла ошибка при проверке', 'danger')
+    elif status_code >= 400:
+        flash('Произошла ошибка при проверке', 'danger')
+    else:
+        insert_check(id, status_code, h1, title, description)
+        flash('Страница успешно проверена', 'success')
     
     return redirect(url_for('url_detail', id=id))
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
