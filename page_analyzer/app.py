@@ -69,12 +69,11 @@ def url_checks(id):
     url = url_record['name']
     status_code, h1, title, description = parse_url(url)
     
-    if status_code is None:
-        flash('Произошла ошибка при проверке', 'danger')
-    elif status_code >= 400:
+    insert_check(id, status_code or 500, h1, title, description)
+    
+    if status_code is None or status_code >= 400:
         flash('Произошла ошибка при проверке', 'danger')
     else:
-        insert_check(id, status_code, h1, title, description)
         flash('Страница успешно проверена', 'success')
     
     return redirect(url_for('url_detail', id=id))
