@@ -32,7 +32,7 @@ def all_urls():
         error = validate_url(url_input)
         if error:
             flash(error, 'danger')
-            return redirect(url_for('home'))
+            return render_template('index.html'), 422
         
         base_url = normalize_url(url_input)
         new_id, is_new = insert_url(base_url)
