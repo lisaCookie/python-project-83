@@ -5,7 +5,7 @@ from flask import Flask, flash, redirect, render_template, request, url_for
 
 from .parser import parse_url
 from .utils import normalize_url, validate_url
-from .work_with_db import (
+from .db import (
     get_all_urls,
     get_checks_by_url_id,
     get_url_by_id,
